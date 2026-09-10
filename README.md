@@ -60,3 +60,13 @@ cd xiaomusic-tools-pkg
 - 链接下载调 `POST /downloadonemusic` + `GET /download_progress`（xiaomusic 自带，带会话鉴权），
   不改后端代码。抓取依赖容器内 `yt-dlp` 和配置里的 cookie / 代理（`--cookies` / `--proxy` 由 config 注入）。
   遇 HTTP 412 或需登录属运行环境问题，可用 xiaomusic 的「上传 yt-dlp cookie」端点改善。
+
+## 插件商城
+
+这两个工具也提供打包好的 zip，在插件商城里下载：
+
+<https://github.com/molakesizhanfangguangmang/xiaomusic-plugin-store>
+
+商城里是已经打好的插件包（`delete-song-1.0.0.zip`、`bili-url-download-1.0.0.zip`），
+配工具区的「上传工具」页用，省去从源码目录手动拷文件。
+工具区本体和上传接口在 [xiaomusic-tools](https://github.com/molakesizhanfangguangmang/xiaomusic-tools)。
