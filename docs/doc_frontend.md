@@ -99,7 +99,7 @@ md.js 对 `.icon-item` 有统一逻辑：本机(web_device)模式下 `.icon-item
 | B. 在 `default/index.html` 尾部追加一段内联 `<script>`，`$(…).after/append` 一个「工具」icon-item（jQuery 已全局在 skin 里） | 改动仅**此 344 行非压缩 html 的尾注一行块** | 低（追加而非改写；不在 md.js/main.js 内动） | 不需碰 375KB 压缩包；入口按钮在运行时由页面自身脚本注入。主页每次加载即出现「工具」。等价于现有页面尾部已有大量追加内联函数片段（rewind/forward/speed 那批），同款位置即可。 |
 | C. 在 md.js 里补函数并在 html 写死 `<div … onclick="…">` | 改 md.js 一到两处 + html | 中（会覆盖时易丢、需版本同步） | 侵入 md.js 主交互文件，能不动尽量不动；但 md.js 可读可控，若 B 需要强耦合全局函数名也仅为追加函数。 |
 
-推荐：默认走 **A 先建可直达的工具页，再以最小 B（html 尾部 inject + 非覆盖式）把主页入口接上**，能最大避免触碰任何已发布文件的核心逻辑；若不想在后续镜像重建后手工改 index.html，仅新增一个“注入用小 js”（把 B 那段脚本独立成工具页文件夹里的 injector.js，由 html 尾部一行 `<script src=…></script>` 引入者也可，见 §4 落点建议）。**纯静态、可被 apply.sh 重放，且可能无需 python 改动。**
+推荐：默认走 **A 先建可直达的工具页，再以最小 B（html 尾部 inject + 非覆盖式）把主页入口接上**，能最大避免触碰任何已发布文件的核心逻辑；若不想在后续镜像重建后手工改 index.html，仅新增一个“注入用小 js”（把 B 那段脚本独立成工具页文件夹里的 injector.js，由 html 尾部一行 `<script src=…></script>` 引入者也可，见 §4 落点建议）。**可被 apply.sh 重放，且可能无需 python 改动。**
 
 （决定权在实现阶段 US-003/004 worker；此处只给出证据与候选。）
 
@@ -159,7 +159,7 @@ md.js 对 `.icon-item` 有统一逻辑：本机(web_device)模式下 `.icon-item
 
 ---
 
-## 5. 结论段：纯静态「工具入口 → 二级页 → 调既有接口」是否可行
+## 5. 结论段：「工具入口 → 二级页 → 调既有接口」是否可行
 
 **可行，且是低风险路径。** 依据：
 1. static 是 AuthStaticFiles 挂载的自由目录，往子目录放 `.html/.js/.css` 纯新增不加 python 即成可访问页（downloadtool.html 为该模式现成先例，URL `/static/default/downloadtool.html`）。
@@ -171,7 +171,7 @@ md.js 对 `.icon-item` 有统一逻辑：本机(web_device)模式下 `.icon-item
 - 工具入口目标页：`/static/default/tool.html`（或独立工具目录 `/static/xiaomusic_tools/index.html` 更利于未来扩充多个工具，且与皮肤解耦；二选一时 prefer 独立目录:每工具一个子页，主页只放一个「工具」总入口更贴合“预留扩展位”设想）。
 - 复用：`./jquery-3.7.1.min.js`、`./main.css`（与 downloadtool 相同取法）；新工具自带独立 css 避免污染皮肤。
 - 主页入口：往 `default/index.html` 尾部追加一段注入（或 util js src），把含「工具」文本的 `.icon-item` 追加进 `.mode-controls`，click→`window.location.href="/static/<工具目录>/index.html"`。
-- 配套要放的外围：工具注册 registry（tools.json/js）、README、apply.sh（容器重建后把上述新增文件以 `docker cp` 回到 static 对应目录并 `docker restart`）——均属纯静态层，不触碰 `.py`。
+- 配套要放的外围：工具注册 registry（tools.json/js）、README、apply.sh（容器重建后把上述新增文件以 `docker cp` 回到 static 对应目录并 `docker restart`）——都在静态文件层，不触碰 `.py`。
 
 **遗留交给 US-002/后续确认的点**
 - “已下载/缓存”名单应来自 `/musiclist`（用户前台可见文件）还是应扫描 `/app/music/download/*` 文件系统并核对 tag_cache → 决定是否需要一个极薄后端只读接口（若需要，US-005/后续在“不改内核语义”前提下最小增补）。本文结论是：纯前端可先落地，功能深度取决于 US-002 输出。

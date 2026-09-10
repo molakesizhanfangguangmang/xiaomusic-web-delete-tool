@@ -9,7 +9,7 @@
 #   2) 删除容器内 static/xiaomusic_tools 整棵（这是本包纯新增的目录）。
 #   3) docker restart 目标容器让首页重新读盘。
 #
-# 不会做的事：绝不碰 /app/xiaomusic 下的任何 .py / 设置 / conf / 其它皮肤。
+# 不会做的事：不碰 /app/xiaomusic 下的任何 .py / 设置 / conf / 其它皮肤。
 #
 # 幂等说明：目录已不在 且 主页已无标记行 => "nothing to remove"，正常退出 0。
 #

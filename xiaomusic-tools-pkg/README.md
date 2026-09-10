@@ -1,16 +1,17 @@
 # xiaomusic 工具区 —— 一键安装包（xiaomusic-tools）
 
-> 打包产物对应 story **US-005**：把前序纯静态产品（**US-003** 删除下载歌曲工具 + **US-004**
+> 打包产物对应 story **US-005**：把前序产物（**US-003** 删除下载歌曲工具 + **US-004**
 > default 主页「工具」入口 / landing + tools.json 注册表）封装成可在宿主机一键复现的
 > bash 安装包 install.sh / uninstall.sh + 本 README。
 >
-> 引擎版本 / 适用对象：**hanxi/xiaomusic v0.6.1**（Arch aarch64 / RK3568 小爱上运行时）。
+> 引擎版本 / 适用对象：**hanxi/xiaomusic v0.6.1**（Arch aarch64）。
 > 前置：一台能跑 `docker`（等价的 Linux 宿主机），目标容器默认名 `xiaomusic`
 
-本包是对 xiaomusic 默认皮肤控制面板的**纯静态、可回滚增强**。它
-**绝不碰容器内任何 `.py`、设置、conf、压缩主干 js 或除 default 之外任何东西**——
-它做的事只有三件：拷静态文件、给 default 主页尾部幂等插一行、重启容器。以及卸载时
-原样撤销这三件。
+本包对 xiaomusic 默认皮肤控制面板做静态文件层面的增强，不修改后端代码。
+安装只做三件事：拷静态文件、给 default 主页尾部插一行、重启容器；卸载时原样撤销。
+
+安装脚本只写 static 目录下的新增文件，另外改 default 主页尾部那一行；容器内的 `.py`、
+设置、conf、压缩主干 js 和其它皮肤都不动。
 
 背景与设计依据见上层层产物 `../README_draft.md`（US-003/004 的落点表、landing↔secondary
 导航链、注入器最小作用域、registry 结构说明）。本页只讲"别人怎么用"。
@@ -36,8 +37,8 @@ xiaomusic-tools-pkg/
             └── tool.js                 ← 逻辑：/musiclist 单选 → 二次确认 → /delmusic
 ```
 
-`install.sh` 与 `uninstall.sh` **只能复制/删除 `static/` 下这一棵** + 对 default 主页
-`index.html` 尾部改一行/删一行，其余一概不碰。就算你要换 / 扩充工具，也只往
+`install.sh` 与 `uninstall.sh` 只复制/删除 `static/` 下这一棵，另外对 default 主页
+`index.html` 尾部改一行/删一行，不涉及其它文件。就算你要换 / 扩充工具，也只往
 `static/xiaomusic_tools/tools.json` 的 `items` append + 放新二级页目录，脚本原样运行。
 
 ---
@@ -110,20 +111,19 @@ default 主控制面板
 
 要点：
 
-- 这一行**行内自带唯一标记 `xtools_entry`**（放在注释里，不影响 HTML 解析），它是本包
-  的专属名片。
-- **已存在该标记 ⇒ 跳过**，重复运行 install 绝不重复插行。
-- **已存在 tools-entry.js 但不带标记**（例如有人按旧版文档/手工加过同一行）⇒ 脚本**停住**
-  要求人工审，不覆盖他人改动；确认无冲突后才可用 `--force` 再 append 自己的标记行。
+- 这一行自带唯一标记 `xtools_entry`（放在注释里，不影响 HTML 解析），脚本靠它判重和回滚。
+- 已存在该标记 ⇒ 跳过，重复运行 install 不会重复插行。
+- 已存在 tools-entry.js 但不带标记（例如有人按旧版文档或手工加过同一行）⇒ 脚本停住，
+  要求人工确认，不覆盖他人改动；确认无冲突后才可用 `--force` 再 append 自己的标记行。
 - 主页若不像 HTML（找不到 `<html`）⇒ 同样停住，需要 `--force`。
-- **删除（uninstall.sh）只删除含 `xtools_entry` 的那一整行**，其余正文逐字节原样写回。
+- 删除（uninstall.sh）只删除含 `xtools_entry` 的那一整行，其余正文逐字节原样写回。
   因此回滚到"安装前"= 只清了这一行注入，不误删任何用户内容（即使这行之后又有人
   append 了别的东西，我们的删除也以行为单位、只摘走自己的行）。
-- 首页正文区、md.js、任何 .py 一律不改；`--force` 只是越过"主页已有他人引用"与"主页不像 HTML"这两道插行护栏（例如确认该"主页"实为测试文件），
+- 首页正文区、md.js、任何 .py 都不改；`--force` 只是越过"主页已有他人引用"与"主页不像 HTML"这两道插行护栏（例如确认该"主页"实为测试文件），
   并不会扩大删除/覆盖范围。
 
 > 万一 default 主页已被你大幅魔改到与 v0.6.1「原版 344 行」/预期形状差得太多（例如整体换皮，
-> 连 `<html>` 都不在了），本脚本已设护栏停住。此时不建议强上 —— 可用**手动替代接线**：
+> 连 `<html>` 都不在了），本脚本已设护栏停住。此时不建议强上，可用手动替代接线：
 > 不做主页插行，只保留 `/static/xiaomusic_tools/` 整树（工具一层页与各二级页独立可达），
 > 需要时在你的主页里放一个自定义入口跳 `/static/xiaomusic_tools/index.html` 即可（详见
 > `README_draft.md §5`）。
@@ -156,7 +156,7 @@ default 主控制面板
 - 先跑 `./install.sh --dry-run`：会做**只读**的容器检测与权限预检（不写容器、不发请求、
   不 restart），然后只打印"将执行"的 docker 命令。
 - 失败自查两步：
-  1. 我删/改的只可能是 static 下纯新增 + 首页那标记一行；
+  1. 我删/改的只可能是 static 下新增文件 + 首页那标记一行；
   2. 真出问题就 `./uninstall.sh`（或手工删那一行）即可恢复；两者都不碰内核 `.py` 与你的
      音乐文件（删除工具只在你**主动二次确认**时才对 download/ 内一首歌发删除）。
 - Docker/容器类的报错请先 `docker ps` 核对容器名（默认 `xiaomusic` 可能不叫这个）。
@@ -179,29 +179,29 @@ default 主控制面板
 
 ## 7. 常见问题（FAQ）
 
-**Q1 为什么不"动内核"，你确定不会把我的服务器/歌弄坏？**
+**Q1 为什么不改后端代码，会不会把我的服务器/歌弄坏？**
 整个改动 = 只拷几个静态文件 + 在 default 主页尾部插一行/删一行 + restart 容器。没有改写任何
-`.py`、没有覆盖 home 正文、没有改设置/conf、不碰其它皮肤。删除动作只由二级页在你**二次确认后**
+`.py`、没有覆盖 home 正文、没有改设置/conf、不碰其它皮肤。删除动作只由二级页在你二次确认后
 对 download/ 单首下发 `POST /delmusic`（复用 v0.6.1 既有内核接口），失败也有判据兜底。卸载能把
-这三件事原样撤销。风险面被锁在最小新增上。
+这三件事原样撤销。
 
-**Q2 为什么是"纯静态新增"边界，好处在哪？**
-新增文件都放 AuthStaticFiles 的 `/static` 挂载点下，同源同会话 cookie 即鉴权，几乎不需要重启
-即可上线、回滚只删文件；同时因为都只是新增，与内核升级/镜像重建天然无耦合。代价是它只能做
-内核既已有接口能表达的事（本包就只表达 `/delmusic`），不会发明"批量删除"之类内核没有的语义。
+**Q2 为什么不改后端代码？**
+新增文件都放 AuthStaticFiles 的 `/static` 挂载点下，同源同会话 cookie 即鉴权，上线不用重启、
+回滚只删文件；因为都只是新增，内核升级或镜像重建后重跑一次安装即可恢复。代价是它只能做
+内核既已有接口能表达的事（本包用到 `/delmusic`），不会发明"批量删除"之类内核没有的语义。
 
 **Q3 为什么删除是真删、删的是 download/ 里的 .mp3/flac…？**
 `/delmusic` 后端 `XiaoMusic.del_music` 走 `os.remove` 删 music_library 解析出的、download/
-区持久卷里的真实音乐文件**本身**，所以是"永久删除、不可撤销"。工具页因此强制**单选 + 二次确认**，
+区持久卷里的真实音乐文件本身，所以是"永久删除、不可撤销"。工具页因此只支持单选加二次确认，
 并在提示里写明"不可撤销"。“下载/缓存”在 v0.6.1 界面上即 download/ 卷区（"下载"库分组）；本工具
 管的就是那批真文件，而不是仅删个歌名 / 网页书签。
 
 **Q4 删完为什么还要 /refreshmusictag（不删不行吗）？**
-v0.6.1 里 `/delmusic` 只 `os.remove` 音乐文件，**不会**自动清理 `cache/tag_cache.json`（标签缓存）
-里的旧条目——它保留的是上次扫描的标签，删文件后会带出一条"幽灵"旧标签。而两个"刷新"端点语义
+v0.6.1 里 `/delmusic` 只 `os.remove` 音乐文件，不会自动清理 `cache/tag_cache.json`（标签缓存）
+里的旧条目，它保留的是上次扫描的标签，删文件后会带出一条"幽灵"旧标签。而两个"刷新"端点语义
 不同：
-- `POST /api/music/refreshlist`（music.py L341）：只重新 `gen_music_list` 扫盘，**不碰** tag_cache；
-- `POST /refreshmusictag`（music.py L322）：把 tag_cache dump `{}` 后**按当前磁盘重建** → 能洗掉
+- `POST /api/music/refreshlist`（music.py L341）：只重新 `gen_music_list` 扫盘，不碰 tag_cache；
+- `POST /refreshmusictag`（music.py L322）：把 tag_cache dump `{}` 后按当前磁盘重建，能洗掉
   已删歌的残留旧标签。
 
 所以删除工具在确认"名字键已从名单消失"之后，再多发一次 `/refreshmusictag`（fire-and-forget，
@@ -223,12 +223,12 @@ v0.6.1 里 `/delmusic` 只 `os.remove` 音乐文件，**不会**自动清理 `ca
 
 ## 8. 与上层文档的关系 / 延伸阅读
 - `../README_draft.md` — US-003/004 设计底稿：落点表（容器路径 ↔ web URL）、landing ↔ registry ↔
-  二级页的数据流、注入器最小作用域、删除工具两步方案与 /refreshmusictag 理由、纯静态红线说明。
+  二级页的数据流、注入器最小作用域、删除工具两步方案与 /refreshmusictag 理由、不改后端的范围说明。
 - `tools.json` / `entry/tools-entry.js` / `delete-song/*` 内的注释即各文件级文档。
 - 脚本自身文件抬头注释 = 本 README 的技术摘要，两处一致。
 
 ---
 
 ## 版本记录
-- **v0.1 (US-005)** 首个发布：install.sh / uninstall.sh / README + 来自 US-003/004 的整棵静态树。
+- v0.1 (US-005) 首个发布：install.sh / uninstall.sh / README + 来自 US-003/004 的整棵静态树。
   marker `xtools_entry`；默认容器 `xiaomusic`；支持 `--dry-run` / `--container` / `--force`。

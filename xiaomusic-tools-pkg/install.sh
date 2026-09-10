@@ -4,7 +4,7 @@
 #
 # 适用：hanxi/xiaomusic v0.6.1 的 Docker 宿主/具备 docker 的宿主机。目标容器默认名
 #   xiaomusic（可用 --container/-c 或环境变量 CONTAINER 覆盖）。
-# 本包是「纯静态 + 主页尾部插一行」的扁平增强，不改任何 /app/xiaomusic 的 .py、
+# 本包只新增静态文件并在主页尾部插一行，不改任何 /app/xiaomusic 的 .py、
 #   不改设置/conf、不动压缩主干 js。
 #
 # 作用（对应 deliverables/README_draft.md §2 落点表）：
@@ -20,7 +20,7 @@
 # 幂等 / 回滚安全（story US-005 取最稳处理）：
 #   * 重复安装不重插行：主页已含 xtools_entry 标记 → 跳过插行；整树重复拷贝为覆盖式
 #     (docker cp 把同名文件叠回) 不报错、无重复注入。
-#   * 仅 append 于 EOF，绝不覆盖正文首部；删除(见 uninstall.sh)只删这一整行标记行，
+#   * 仅 append 于 EOF，不覆盖正文首部；删除(见 uninstall.sh)只删这一整行标记行，
 #     恢复主页到「原样 + 仅清注入」，不会误删用户原有内容。
 #   * 若在主页上检测到**非本脚本注入**的对 tools-entry.js 的引用（例如按旧版手工文档
 #     加过不带标记的同一行）→ 中止并把决定交给人工审；除非带 --force 且操作者自知。
@@ -85,7 +85,7 @@ done
 # ---- 预检 ---------------------------------------------------------------
 if ! command -v docker >/dev/null 2>&1; then
   err "本机找不到 docker 命令。此安装包需跑在具备 Docker 的宿主机上。"
-  err "请先在宿主安装/启用 Docker 后重试（本包为纯静态增强，未做任何写入即退出）。"
+  err "请先在宿主安装/启用 Docker 后重试（本包只改静态文件，未做任何写入即退出）。"
   exit 1
 fi
 

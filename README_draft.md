@@ -2,8 +2,8 @@
 
 > 本文是本 mission README 的一节草稿（涵盖 US-003 静态产物与 US-004 主页入口叠加：
 > US-003 = 工具注册表 + 删除歌曲二级页底座；US-004 = 让 default 主页能点到这些工具）。
-> 仅说明这批**纯静态新增文件**的用途、文件间相对路径约定，以及将来放容器 static 下的确切落点
-> （**只写文档，绝不 docker cp**，docker 动作归 US-005 install/apply，不在此 worker 范围）。
+> 仅说明这批新增静态文件的用途、文件间相对路径约定，以及将来放容器 static 下的确切落点
+> （只写文档，不做 docker cp，docker 动作归 US-005 install/apply，不在此 worker 范围）。
 
 ## 0. 定位一句话
 
@@ -12,7 +12,7 @@
 default 主控制面板（工具入口） → 工具一层页 index.html（读注册表渲染卡片）
                                  → 任一二级工具（如「删除歌曲」/delete-song/index.html → POST /delmusic）
 ```
-底座 US-003 提供「工具注册表 + 一个删除已下载歌曲纯静态二级页」；US-004 提供「主页『工具』
+底座 US-003 提供「工具注册表 + 一个删除已下载歌曲的静态二级页」；US-004 提供「主页『工具』
 按钮 → 一层页」这段接线。全部是**只写 static 的新加文件**：不触碰任何 `/app/xiaomusic/**/*.py`
 内核代码、不改写控制器、不改压缩主干 js；二级页删歌全走既有 `POST /delmusic`。
 
@@ -203,7 +203,7 @@ AuthStaticFiles → AuthStaticFiles + session cookie / HTTP Basic 保护下。�
 > 落到 default 皮肤只需要两步：① 把 `xiaomusic_tools` 整棵静态树拷到容器 static 下；
 > ② 在 default 主页 `default/index.html` 的**末尾（`</body>` 前的最后一个 `</script>` 之后）**
 > 追加**唯一一行** `<script>` 引用注入器。其它任何位置/文件都不用改——344 行主页正文原样保留，
-> 压缩主干 js、`.py` 一律不动。
+> 压缩主干 js、`.py` 不动。
 
 ### 5.1 安装
 1. **拷静态子树**（US-005 执行；docker 侧）：
@@ -240,4 +240,4 @@ AuthStaticFiles → AuthStaticFiles + session cookie / HTTP Basic 保护下。�
 - index.html(landing)、tools.js 引用的 getElementById 目标（`#tt-status/#tt-grid/#tt-count`）均
   存在于 index.html DOM；注入器引用的挂载点 `.mode-controls.button-group` 在 research 副本
   default_index.html 内实际存在。
-- 页面无任何 CDN/http 外链；内部资源一律相对 `./`(同目录) 或根绝对 `/static/…`。
+- 页面无任何 CDN/http 外链；内部资源用相对 `./`(同目录) 或根绝对 `/static/…`。

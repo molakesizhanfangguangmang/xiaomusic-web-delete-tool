@@ -15,8 +15,8 @@
  *   /static/xiaomusic_tools 整个目录，见 README 回滚小节）。
  *
  * 最小作用域约定（验收 5）：本文件不定义任何全局；不改、不覆盖 md.js 的任何函数；
- *   只在“自己的唯一目标节点”上挂一个 click 监听，绝不向 .mode-controls 或其父容器
- *   委托/转发事件，绝不触碰 md.js 的弹窗(component-overlay/closeAllDialogs 等管理区)。
+ *   只在“自己的唯一目标节点”上挂一个 click 监听，不向 .mode-controls 或其父容器
+ *   委托/转发事件，也不触碰 md.js 的弹窗(component-overlay/closeAllDialogs 等管理区)。
  *   md.js 对 .icon-item 的禁用只匹配 <p> 本文为 搜索/定时/测试 三项（web_device 模式），
  *   “工具”不在名单，天然不受其禁用逻辑影响。
  */
@@ -36,7 +36,7 @@
 
   function inject() {
     /* 挂载点：主页里“设备功能入口行”`.mode-controls` 容器。一次定位，找不到就静默中止，
-       绝不影响页面其它区域。 */
+       不影响页面其它区域。 */
     var host = document.querySelector('.mode-controls.button-group');
     if (!host) { return; }
 
