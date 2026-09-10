@@ -1,0 +1,84 @@
+{
+  "project": "xiaomusic-web-delete-tool",
+  "branchName": "mission/xiaomusic-web-delete-tool",
+  "description": "给 hanxi/xiaomusic v0.6.1 web 控制面板加\"工具\"二级页：纯静态删除已下载/缓存歌曲的入口 + 主页工具入口 + 可复现交付脚本（不碰实机/内核）",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "前端壳与接入点资料收集（只读）",
+      "description": "作为实现者，我需要弄清 static/default 的页面结构、主页(index.html/merge 引用关系)如何挂按钮层、以及 xiaomusic 前端相对路径/鉴权方式，以确定能不加改动、仅叠加静态资源接入二级工具页。",
+      "acceptanceCriteria": [
+        "产出只读资料文件(写回 loop 目录 doc_frontend.md，建议路径见下)，不改任何实机与容器文件、不 docker restart",
+        "确认承载页版本：<port> /static/default/index.html 还是纯壳，记录 grep 到的关键行/文件(merge/main.js、setting 等)及文件相对路径清单",
+        "确认主页现有哪些可通过叠加而不破压缩包的扩展位(如纯页面 anchor/li 结构或独立 js/css 挂载点)建议如何加\"工具\"入口",
+        "记录鉴权/auth 情况（是否有登录守卫、相对路径基准 <base> 或反代前缀）确保工具页在同一端口下可用后端接口",
+        "记录/列出后端供前端使用的歌曲列表与删除接口名（预期 /musicinfos、/delmusic 及其调用形参），带 exact/file+line 引用",
+        "核实纯静态叠加方案可行或不可行的明确结论并附证据；改动仅限于新增静态文件的主张不能触碰任何 .py"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "只读探测，不改实机。产出路径：环境变量见下（loop 目录）下的 doc_frontend.md。verifier: PASS (2026-09-10)；修正 router=APIRouter loc→L28。"
+    },
+    {
+      "id": "US-002",
+      "title": "删除链路数据与影响面资料收集（只读）",
+      "description": "作为实现者，我需要弄清 /delmusic 到底删哪些(真实 mp3? tag_cache 条目? tmp?), 入参 MusicItem 含哪些必填字段, 删除后文件/列表各自什么表现, 以便工具页调用正确并对副作用做出提示。",
+      "acceptanceCriteria": [
+        "产出只读资料(loop 目录下 doc_backend.md)，不经 API 对实机发任何写请求、不删任何真实文件、不 docker restart",
+        "读 api/routers/music.py 的 delmusic/musicinfos 相关函数并记录它们依赖的 service 与副作用路径(文件系统哪一目录、tag_cache.json 条目如何变更或重建)",
+        "记录 MusicItem / MusicInfosQuery 等请求模型完整字段(json schema 或 pydantic 字段名)，说明删除前取列表应传哪些参数",
+        "确认 download/ 目录+tag_cache 与 file_watcher 的联动：删除文件后 watcher/刷新是否会残留旧条目，工具页应如何提示用户",
+        "判定结论：能否纯靠前端调已有接口达成删除目标；若不能，给出\"最少且最小\"的后端改动候选名单(仅命名与定位，不动手)",
+        "备注 tmp/ 哈希残留与音箱端缓存不在删除范围内(设备端不可达)的现状证据"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "只读。产物路径 loop/doc_backend.md。禁止任何写/删实测。verifier: PASS (2026-09-10, 见 verify/verify_us002.txt)。非阻塞备注：临时行号/镜像内命名偏差、tmp哈希个数漂移、额外 bak 文件，均不改裁决。"
+    },
+    {
+      "id": "US-003",
+      "title": "纯静态二级\"删除歌曲\"工具页 + 工具注册表",
+      "description": "作为使用者，我希望在控制面板里能点进一个\"工具\"二级页，页面内先提供一个\"删除已下载歌曲\"卡片：从已下载列表单选、二级弹窗二次确认后才删，且页面做成可扩展注册结构以容纳未来的填链接下载等更多工具。",
+      "acceptanceCriteria": [
+        "编写纯静态新增文件(不触碰 .py)：一个工具 registry(tools.json 或等价的 js 常量) + 一个删除工具页 index(html/css/js，可与 US-001/002 结论中的相对路径和接口一致)",
+        "删除工具页：拉取并展示已下载歌曲清单(依据 doc 中确认的列表接口)，每首歌提供单选; 提供\"删除\"动作触发二级确认弹窗(显示将删文件名与\"不可撤销\"提示)，确认后才调删除接口",
+        "显式禁止\"一键清空/全选删除\"入口；删除仅允许单选且必须过二级确认",
+        "registry 结构对未来工具(tool item: 标题/图标/url/一句说明)开放追加入口位置，并注释该扩展位(不给未来工具实现)",
+        "代码只写到 loop 或该 mission 新 git 仓，绝不触碰生产 web/宿主机音乐目录; 文档说明资源应放容器 static 的哪一目錄路徑(docker 侧落点)但不执行 docker cp"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "纯产物。测试/浏览器验证仅在用户单独下令后进行(listener 已设 run_disabled 注记)。 verifier: PASS (9项静态证据+对抗probe)。产物 deliverables/xiaomusic_tools/{tools.json + delete-song/{index.html,tool.css,tool.js}}；删除唯一可达路径=modal确认；确认后真发 /refreshmusictag。"
+    },
+    {
+      "id": "US-004",
+      "title": "主页叠加\"工具\"入口并接线到二级页",
+      "description": "作为使用者，我希望从 xiaomusic 控制面板主页(static/default 壳)点\"工具\"即可进入 US-003 的二级工具页，而不是要手敲 URL。",
+      "acceptanceCriteria": [
+        "在不改压缩主干 js 的前提下，通过叠加附加的静态(jquery/fetch 钩或向页面注入按钮的最小 append)在 control 主页添加\"工具\"入口按钮，引导到工具页相对 url(与 US-003 registry 约定一致)",
+        "主页修改以新增形态为主，不改坏既有页面其他功能(nav/main 其余不受影响的静态自查)",
+        "入口在 <port> 同一端口/鉴权环境下可达，相对路径正确(避开反代/base 陷阱，若存在)",
+        "说明如何 docker cp 这些资源到 static 对应路径的\"应用说明\"写入本项目 README 草案(仅文档，不执行)",
+        "不改任何 .py/内核"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "依赖 US-003 的 registry 相对路径约定；浏览器实机验证仅在用户令下执行。 verifier: PASS(逐条+对抗probe: 挂点/消失防护/404边界/防重复/同源cookie)。产物 landing(/static/xiaomusic_tools/index.html 读 tools.json 自动扩展)+ entry/tools-entry.js(主页运行时注入，只加一行尾部script)。"
+    },
+    {
+      "id": "US-005",
+      "title": "可复现交付：别人的一键 sh/py 脚本 + 安装 README",
+      "description": "作为另一位用户/将来的我，我想在容器存在但改动被镜像重建冲掉后，用一条命令把 工具registry+二级删除页+主页入口叠加回 xiaomusic v0.6.1 并重启，好让功能在除本机外的部署也可用、且可回滚。",
+      "acceptanceCriteria": [
+        "在产物顶层提供可执行安装脚本(install.sh 或等价 py)，它依据固定相对路径把 US-003+004 生成的静态新增文件(docker cp/或 bin)放进容器对应 static 落点并 docker restart(幂等、不触碰 /app/xiaomusic/*.py)",
+        "脚本含 dry-run/无容器时的安全失败与回滚说明；默认在宿主机 Docker 宿主上执行且指定默认容器名 xiaomusic",
+        "README 记录：适用版本=hanxi/xiaomusic:v0.6.1、放置路径、手动步骤、别人怎么用(等价先前 rke-patcher apply 思路)、卸载方法(移除新增文件+复原主页注入或声明停机条件)",
+        "产物仅含新增静态资源+脚本+文档，不包含 cookie/登录态/音乐/tag_cache 数据或任何真实文件",
+        "所有文件首先写在本 mission git 仓/loop 以便 git 审查，后续如获许才提交到 GitHub 私有仓并推送"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "测试/应用实机严格等待用户命令。交付内容保持静态新增原则。 verifier: PASS（复验 f358432 修正 --force尊重问题后，台驺文件+install+README 齐平）。产物 deliverables/xiaomusic-tools-pkg/{install.sh,uninstall.sh,README.md,static/xiaomusic_tools—与严验原来零差异}。单独记录：存在既有音rc-masking 问题（！分支下 $?翻转），不影响当前交付安全性，留后续。"
+    }
+  ]
+}
